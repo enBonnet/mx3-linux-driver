@@ -4,7 +4,7 @@ Release:        1%{?dist}
 Summary:        Gesture remapping driver for Logitech MX Master 3 mice
 
 License:        MIT
-URL:            https://github.com/Xandras/MX3-Linux-Driver
+URL:            https://github.com/enBonnet/mx3-linux-driver
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  gcc, make, systemd-rpm-macros
@@ -51,5 +51,5 @@ udevadm trigger 2>/dev/null || true
 %license %{_datadir}/licenses/%{name}/LICENSE
 
 %changelog
-* Mon Jun 01 2026 Xandras <your-email@example.com> - 1.0.0-1
+* Mon Jun 01 2026 Ender Bonnet <enbonnet@gmail.com> - 1.0.0-1
 - Initial release

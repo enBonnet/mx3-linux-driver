@@ -1,11 +1,11 @@
 Source: mx3
 Section: utils
 Priority: optional
-Maintainer: Xandras <your-email@example.com>
+Maintainer: Ender Bonnet <enbonnet@gmail.com>
 Build-Depends: debhelper-compat (= 13), gcc, make
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
-Homepage: https://github.com/Xandras/MX3-Linux-Driver
+Homepage: https://github.com/enBonnet/mx3-linux-driver
 
 Package: mx3
 Architecture: amd64

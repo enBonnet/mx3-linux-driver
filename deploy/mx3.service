@@ -1,6 +1,6 @@
 [Unit]
 Description=MX3 Mouse Gesture Driver
-Documentation=https://github.com/Xandras/MX3-Linux-Driver
+Documentation=https://github.com/enBonnet/mx3-linux-driver
 After=multi-user.target
 
 [Service]

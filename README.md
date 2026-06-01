@@ -367,3 +367,7 @@ make uninstall    # Remove installed files
 ## License
 
 MIT — see [LICENSE](LICENSE)
+
+## Credits
+
+Based on the original [MX3-Linux-Driver](https://github.com/X4ndras/MX3-Linux-Driver) by Xandras.
