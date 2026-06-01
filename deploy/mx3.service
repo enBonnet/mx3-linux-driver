@@ -1,0 +1,26 @@
+[Unit]
+Description=MX3 Mouse Gesture Driver
+Documentation=https://github.com/Xandras/MX3-Linux-Driver
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=@PREFIX@/bin/mx3 --daemon --pid-file /run/mx3.pid
+PIDFile=/run/mx3.pid
+Restart=on-failure
+RestartSec=5
+User=root
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/%u/.Xauthority
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/dev/uinput
+ReadOnlyPaths=/dev/input
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

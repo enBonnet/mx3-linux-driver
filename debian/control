@@ -1,0 +1,23 @@
+Source: mx3
+Section: utils
+Priority: optional
+Maintainer: Xandras <your-email@example.com>
+Build-Depends: debhelper-compat (= 13), gcc, make
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/Xandras/MX3-Linux-Driver
+
+Package: mx3
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: systemd, udev
+Description: Gesture remapping driver for Logitech MX Master 3 mice
+ MX3 captures mouse button holds and movement gestures from Logitech MX
+ Master 3 (and compatible) mice and translates them into keyboard
+ shortcuts via /dev/uinput.
+ .
+ Supports tap, swipe (4 cardinal), and diagonal (4 corner) gestures for
+ forward, back, middle, extra, side, and thumb gesture buttons.
+ .
+ Supported mice: MX Master 3, MX Master 3S, MX Master 2S, MX Anywhere 3,
+ and generic Logitech receivers (046d:*).
