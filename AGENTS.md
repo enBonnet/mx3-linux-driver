@@ -48,10 +48,12 @@ The binary reads raw `struct input_event` from an evdev fd and injects keys via 
 
 ## Permissions
 
-User must be in `input` group and `uinput` kernel module must be loaded:
+Production installs use the packaged root-managed `systemd` service. The
+`uinput` kernel module must be loaded:
 ```bash
 sudo modprobe uinput
-sudo usermod -aG input $USER
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo systemctl enable --now mx3
 ```
 
 ## Packaging

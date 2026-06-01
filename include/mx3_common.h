@@ -6,7 +6,9 @@
 #include <stdbool.h>
 #include <time.h>
 
-#define MX3_VERSION "1.0.0"
+#ifndef MX3_VERSION
+#define MX3_VERSION "0.0.0-dev"
+#endif
 
 /* --------------------------------------------------------------------------
  * Log levels
@@ -131,5 +133,6 @@ void      config_free(config_t *cfg);
 int       config_load(config_t *cfg, const char *path);
 int       config_load_default(config_t *cfg);
 void      config_set_defaults(config_t *cfg);
+gesture_action_t *config_find_action(config_t *cfg, int button_idx, gesture_dir_t dir);
 
 #endif

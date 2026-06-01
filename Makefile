@@ -2,16 +2,20 @@
 # Build system for the gesture-based keyboard shortcut mapper
 
 CC      := gcc
-CFLAGS  := -Wall -Wextra -Werror -O2 -std=gnu11 -D_GNU_SOURCE
+VERSION := $(shell tr -d '\n' < VERSION)
+CFLAGS  := -Wall -Wextra -Werror -O2 -std=gnu11 -D_GNU_SOURCE -DMX3_VERSION=\"$(VERSION)\"
 LDFLAGS :=
 
 TARGET  := mx3
 
 SRC_DIR := src
 INC_DIR := include
+TEST_DIR := tests
+TEST_BUILD_DIR := $(TEST_DIR)/build
 
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(SOURCES:.c=.o)
+TEST_BINARIES := $(TEST_BUILD_DIR)/test_config_behavior $(TEST_BUILD_DIR)/test_gesture_behavior $(TEST_BUILD_DIR)/test_device_score
 
 PREFIX      ?= /usr/local
 BIN_DIR     ?= $(PREFIX)/bin
@@ -23,7 +27,7 @@ LICENSE_DIR ?= $(PREFIX)/share/licenses/mx3
 
 CFLAGS += -I$(INC_DIR)
 
-.PHONY: all clean install install-local uninstall test lint format debug
+.PHONY: all clean install install-local uninstall uninstall-local test test-binaries lint format debug validate-package-layout validate-packaging release-artifacts verify-version
 
 all: $(TARGET)
 
@@ -36,10 +40,39 @@ $(SRC_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(INC_DIR)/*.h)
 # ---------------------------------------------------------------------------
 # Testing
 # ---------------------------------------------------------------------------
-test: $(TARGET)
+test-binaries: $(TEST_BINARIES)
+
+test: $(TARGET) test-binaries
 	@echo "=== Running test suite ==="
 	@cd tests && bash run_tests.sh
 	@echo "=== Tests complete ==="
+
+$(TEST_BUILD_DIR):
+	install -d $(TEST_BUILD_DIR)
+
+$(TEST_BUILD_DIR)/test_config_behavior: $(TEST_DIR)/test_config_behavior.c $(SRC_DIR)/config.c $(SRC_DIR)/logging.c $(wildcard $(INC_DIR)/*.h) | $(TEST_BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(INC_DIR) -o $@ $(TEST_DIR)/test_config_behavior.c $(SRC_DIR)/config.c $(SRC_DIR)/logging.c
+
+$(TEST_BUILD_DIR)/test_gesture_behavior: $(TEST_DIR)/test_gesture_behavior.c $(SRC_DIR)/gesture.c $(SRC_DIR)/logging.c $(wildcard $(INC_DIR)/*.h) | $(TEST_BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(INC_DIR) -o $@ $(TEST_DIR)/test_gesture_behavior.c $(SRC_DIR)/gesture.c $(SRC_DIR)/logging.c
+
+$(TEST_BUILD_DIR)/test_device_score: $(TEST_DIR)/test_device_score.c $(SRC_DIR)/device.c $(SRC_DIR)/logging.c $(wildcard $(INC_DIR)/*.h) | $(TEST_BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(INC_DIR) -o $@ $(TEST_DIR)/test_device_score.c $(SRC_DIR)/device.c $(SRC_DIR)/logging.c
+
+validate-package-layout: $(TARGET)
+	@TMPDIR=$$(mktemp -d) && \
+	trap 'rm -rf "$$TMPDIR"' EXIT && \
+	$(MAKE) DESTDIR="$$TMPDIR" PREFIX=/usr install >/dev/null && \
+	bash tests/validate_package_layout.sh "$$TMPDIR"
+
+validate-packaging: validate-package-layout
+	@bash tests/validate_packaging_metadata.sh
+
+verify-version:
+	@bash scripts/check_version_consistency.sh
+
+release-artifacts: verify-version
+	@bash scripts/build_release_artifacts.sh dist
 
 # ---------------------------------------------------------------------------
 # Code quality
@@ -54,7 +87,7 @@ format:
 # ---------------------------------------------------------------------------
 # Debug build
 # ---------------------------------------------------------------------------
-debug: CFLAGS = -Wall -Wextra -g -O0 -DDEBUG -std=c11 -I$(INC_DIR) -fsanitize=address -fsanitize=undefined
+debug: CFLAGS = -Wall -Wextra -g -O0 -DDEBUG -std=gnu11 -D_GNU_SOURCE -DMX3_VERSION=\"$(VERSION)\" -I$(INC_DIR) -fsanitize=address -fsanitize=undefined
 debug: clean $(TARGET)
 
 # ---------------------------------------------------------------------------
@@ -83,16 +116,16 @@ install: $(TARGET)
 	@echo ""
 	@echo "Installation complete ($(BIN_DIR)/$(TARGET))."
 	@echo ""
-	@echo "Permissions (one-time setup, then log out and back in):"
+	@echo "Production runtime (recommended):"
 	@echo "  sudo modprobe uinput"
-	@echo "  sudo usermod -aG input \$$USER"
-	@echo ""
-	@echo "To reload udev rules:"
 	@echo "  sudo udevadm control --reload-rules && sudo udevadm trigger"
-	@echo ""
-	@echo "To enable automatic startup:"
 	@echo "  sudo systemctl daemon-reload"
 	@echo "  sudo systemctl enable --now mx3"
+	@echo "  sudo systemctl status mx3"
+	@echo "  sudo journalctl -u mx3 -f"
+	@echo ""
+	@echo "Note: running 'mx3' directly as a regular user may fail with /dev/uinput permission denied."
+	@echo "For foreground debugging, use: sudo mx3 -l debug"
 
 install-local: $(TARGET)
 	install -d $(HOME)/.local/bin
@@ -104,24 +137,42 @@ install-local: $(TARGET)
 	@echo "Add ~/.local/bin to your PATH if it is not already there:"
 	@echo "  echo 'export PATH=\"\$$HOME/.local/bin:\$$PATH\"' >> ~/.bashrc"
 	@echo ""
-	@echo "Permissions (one-time setup, then log out and back in):"
+	@echo "Manual local runs still require access to /dev/input/event* and /dev/uinput."
 	@echo "  sudo modprobe uinput"
-	@echo "  sudo usermod -aG input \$$USER"
+	@echo "  sudo $(HOME)/.local/bin/$(TARGET) -l debug"
 	@echo ""
-	@echo "Until you log out and back in, use:"
-	@echo "  sg input -c mx3"
+	@echo "For production use, prefer the packaged systemd service."
 
 uninstall:
+	@if [ -z "$(DESTDIR)" ] && command -v systemctl >/dev/null 2>&1; then \
+		echo "Stopping and disabling mx3.service if present..."; \
+		systemctl disable --now mx3 >/dev/null 2>&1 || true; \
+	fi
 	rm -f $(DESTDIR)$(BIN_DIR)/$(TARGET)
 	rm -rf $(DESTDIR)$(CONFIG_DIR)
 	rm -f $(DESTDIR)$(SYSTEMD_DIR)/mx3.service
 	rm -f $(DESTDIR)$(UDEV_DIR)/99-mx3.rules
 	rm -rf $(DESTDIR)$(DOC_DIR)
 	rm -rf $(DESTDIR)$(LICENSE_DIR)
+	@if [ -z "$(DESTDIR)" ] && command -v systemctl >/dev/null 2>&1; then \
+		echo "Reloading systemd daemon..."; \
+		systemctl daemon-reload >/dev/null 2>&1 || true; \
+	fi
+	@if [ -z "$(DESTDIR)" ] && command -v udevadm >/dev/null 2>&1; then \
+		echo "Reloading udev rules..."; \
+		udevadm control --reload-rules >/dev/null 2>&1 || true; \
+		udevadm trigger >/dev/null 2>&1 || true; \
+	fi
 	@echo "Uninstall complete."
+
+uninstall-local:
+	rm -f $(HOME)/.local/bin/$(TARGET)
+	rm -rf $(HOME)/.config/mx3
+	@echo "Local uninstall complete."
 
 # ---------------------------------------------------------------------------
 # Cleanup
 # ---------------------------------------------------------------------------
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) $(TEST_BINARIES)
+	rm -rf $(TEST_BUILD_DIR)

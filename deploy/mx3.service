@@ -5,13 +5,10 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=@PREFIX@/bin/mx3 --daemon --pid-file /run/mx3.pid
-PIDFile=/run/mx3.pid
+ExecStart=@PREFIX@/bin/mx3
 Restart=on-failure
 RestartSec=5
 User=root
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/%u/.Xauthority
 
 # Security hardening
 NoNewPrivileges=yes

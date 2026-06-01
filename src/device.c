@@ -65,6 +65,25 @@ static int check_device_caps(int fd) {
     return has_button;
 }
 
+int device_score_match(const device_match_t *match, int vid, int pid, const char *device_name) {
+    int score = 0;
+
+    if ((match->vid == 0 && match->pid == 0) ||
+        ((match->vid == 0 || vid == match->vid) &&
+         (match->pid == 0 || pid == match->pid))) {
+        score += 100;
+    }
+
+    if (!match->name[0]) {
+        score += 50;
+    } else if (device_name && strcasestr(device_name, match->name)) {
+        score += 50;
+        if (strcmp(device_name, match->name) == 0) score += 25;
+    }
+
+    return score;
+}
+
 int device_find_mouse(const device_match_t *match) {
     DIR *dir = opendir("/dev/input");
     if (!dir) {
@@ -96,14 +115,17 @@ int device_find_mouse(const device_match_t *match) {
         }
 
         int score = 0;
-        if (check_device_usb(fd, match->vid, match->pid))  score += 100;
-        if (check_device_name(fd, match->name))             score += 50;
-        /* exact name match bonus */
-        if (match->name[0]) {
-            char name[256];
-            if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name) >= 0) {
-                if (strcmp(name, match->name) == 0) score += 25;
+        if (check_device_usb(fd, match->vid, match->pid) && check_device_name(fd, match->name)) {
+            char name[256] = {0};
+            struct input_id id = {0};
+
+            if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name) >= 0 &&
+                ioctl(fd, EVIOCGID, &id) >= 0) {
+                score = device_score_match(match, id.vendor, id.product, name);
             }
+        } else {
+            if (check_device_usb(fd, match->vid, match->pid)) score += 100;
+            if (check_device_name(fd, match->name)) score += 50;
         }
 
         if (score > best_score) {

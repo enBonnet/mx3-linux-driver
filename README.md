@@ -16,20 +16,31 @@ Gesture remapping driver for Logitech MX Master 3 (and MX2/MX2S/Anywhere 3) mice
 # Build
 make
 
-# Install system-wide (binary goes to /usr/local/bin, on PATH)
+# Install system-wide (writes to /usr/local and /etc, so root is required)
 sudo make install
 
 # Or install to ~/.local/bin (no root needed, add ~/.local/bin to PATH if not already)
 make install-local
 
-# Set up permissions (reboot or log out/in after)
+# Set up the packaged service
 sudo modprobe uinput
-sudo usermod -aG input $USER
 sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo systemctl daemon-reload
+sudo systemctl enable --now mx3
 
-# Run directly
-mx3
+# Verify the service is running
+sudo systemctl status mx3
+
+# Follow logs while testing gestures
+sudo journalctl -u mx3 -f
+
+# Foreground debugging requires device access, so use sudo
+sudo mx3 -l debug
 ```
+
+If you run `mx3` directly as your regular user after the default system install,
+it will usually fail with `Cannot open /dev/uinput: Permission denied`. That is
+expected: the default install path is the root-managed `systemd` service.
 
 ## Project Structure
 
@@ -44,20 +55,23 @@ mx3
 │   ├── mx3.postinst     #   Post-install (enable service, reload udev)
 │   └── mx3.postrm       #   Post-remove (disable service)
 ├── deploy/
-│   ├── mx3.service      #   systemd unit (ExecStart=@PREFIX@/bin/mx3)
-│   └── 99-mx3.rules     #   udev rule (/dev/uinput → input group)
+│   ├── mx3.service      #   systemd unit (runs mx3 in foreground)
+│   └── 99-mx3.rules     #   udev rule for the packaged service runtime
 ├── config/
 │   └── default.conf     #   Installed to /etc/mx3/config.conf
+├── VERSION              #   Single source of truth for release version
+├── scripts/             #   Release and verification helpers
 ├── src/                 #   Modular C source files
 ├── include/             #   Header files
-└── tests/               #   Shell test suite
+└── tests/               #   Shell suite + native behavior tests
 ```
 
 The `Makefile` is the single authority for installation. Every platform package
 (Debian, Arch, RPM) is a thin wrapper that calls `make PREFIX=/usr install`.
 The `@PREFIX@` placeholder in `deploy/mx3.service` is patched during install so
 the `ExecStart` path matches the chosen prefix (`/usr/bin/mx3` on AUR/RPM/deb,
-`/usr/local/bin/mx3` on manual installs).
+`/usr/local/bin/mx3` on manual installs). The service runs `mx3` in the foreground
+and lets `systemd` manage restart and lifecycle.
 
 ## Installation
 
@@ -118,6 +132,10 @@ for manual and Debian/Arch installs.
 sudo systemctl enable --now mx3
 sudo systemctl status mx3
 ```
+
+Production packages install a root-managed `systemd` service. That is the
+supported production runtime because it keeps device access scoped to the
+service instead of requiring broad interactive-user access.
 
 ## Supported Mice
 
@@ -273,16 +291,23 @@ action.upright.description = Ctrl+Right
 ```bash
 sudo systemctl enable --now mx3
 sudo systemctl status mx3
+sudo journalctl -u mx3 -f
 ```
 
-To customize the service (e.g., set a different config file):
+To customize the service (for example, to use a different config file):
 
 ```bash
 sudo systemctl edit mx3
-# Add: Environment=MX3_CONFIG=/path/to/config.conf
+# Add:
+# [Service]
+# ExecStart=
+# ExecStart=/usr/bin/mx3 --config /path/to/config.conf
 ```
 
-Or override the `ExecStart` directly:
+`mx3` does not read an `MX3_CONFIG` environment variable. Override `ExecStart`
+if you need to pass runtime flags managed by `systemd`.
+
+Or replace the full unit directly:
 
 ```bash
 sudo systemctl edit --full mx3
@@ -304,28 +329,50 @@ mx3 -d /dev/input/event5
 
 The driver needs access to two device nodes:
 
-| Path | Purpose | Fix |
-|------|---------|-----|
-| `/dev/input/event*` | Read mouse events | User in `input` group |
-| `/dev/uinput` | Create virtual keyboard | `uinput` kernel module + user in `input` group |
+| Path | Purpose | Production path |
+|------|---------|-----------------|
+| `/dev/input/event*` | Read mouse events | Use the packaged `systemd` service |
+| `/dev/uinput` | Create virtual keyboard | Load `uinput` and use the packaged `systemd` service |
 
 ```bash
 sudo modprobe uinput
-sudo usermod -aG input $USER
-# Log out and back in for group membership to take effect
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo systemctl daemon-reload
+sudo systemctl enable --now mx3
 ```
+
+For production deployments, `mx3` is expected to run as the packaged
+root-managed `systemd` service. Manual local runs are still useful for
+debugging, but they require direct access to the input devices on the host.
+
+For that reason, a successful install does not imply `mx3` will run correctly
+as an unprivileged interactive command. The supported new-user flow is:
+
+1. `sudo make install`
+2. `sudo modprobe uinput`
+3. `sudo udevadm control --reload-rules && sudo udevadm trigger`
+4. `sudo systemctl daemon-reload`
+5. `sudo systemctl enable --now mx3`
+6. `sudo systemctl status mx3`
+7. `sudo journalctl -u mx3 -f`
+
+The shipped `udev` rule does not grant broad interactive access to input
+devices. That is intentional for production packaging.
 
 ## Debugging
 
 ```bash
-# Verbose logging
-mx3 -l debug
+# Verbose foreground logging
+sudo mx3 -l debug
 
 # Test with a specific device
-mx3 -l debug -d /dev/input/event5
+sudo mx3 -l debug -d /dev/input/event5
 
 # Check if uinput is available
 ls -la /dev/uinput
+
+# Check service logs
+sudo journalctl -u mx3 -n 50 --no-pager
 
 # Monitor generated key events
 sudo evtest /dev/input/by-id/*MX3-Gesture-Driver*
@@ -337,11 +384,16 @@ sudo evtest /dev/input/by-id/*MX3-Gesture-Driver*
 make              # Release build (-O2)
 make debug        # Debug build with AddressSanitizer
 make test         # Run test suite
+make verify-version
+make release-artifacts
 make lint         # Static analysis (needs cppcheck, clang-tidy)
 make format       # Auto-format code (needs clang-format)
 make install      # Install to /usr/local
-make uninstall    # Remove installed files
+make uninstall    # Remove system install and stop/disable mx3.service
+make uninstall-local  # Remove ~/.local/bin/mx3 and ~/.config/mx3
 ```
+
+Release and versioning are documented in `docs/release-process.md`.
 
 ## How It Works
 
@@ -358,11 +410,11 @@ make uninstall    # Remove installed files
 
 | Problem | Solution |
 |---------|----------|
-| "Cannot open /dev/uinput" | `sudo modprobe uinput` then re-run |
+| "Cannot open /dev/uinput" | If running manually, use `sudo mx3 ...`; for normal installs, use `sudo systemctl enable --now mx3` and inspect `journalctl -u mx3` |
 | No gestures detected | Check `-l debug` output, ensure device name matches |
 | Wrong device selected | Use `-d /dev/input/eventN` to force a device |
 | Keys not working | Verify key names in config are valid |
-| "Permission denied" | Add yourself to the `input` group, log out/in |
+| "Permission denied" | Use the packaged `systemd` service, or run with device access for debugging |
 
 ## License
 

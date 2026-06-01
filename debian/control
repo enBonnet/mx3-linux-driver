@@ -2,13 +2,13 @@ Source: mx3
 Section: utils
 Priority: optional
 Maintainer: Ender Bonnet <enbonnet@gmail.com>
-Build-Depends: debhelper-compat (= 13), gcc, make
+Build-Depends: debhelper-compat (= 13), gcc, make, dh-sequence-systemd
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
 Homepage: https://github.com/enBonnet/mx3-linux-driver
 
 Package: mx3
-Architecture: amd64
+Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: systemd, udev
 Description: Gesture remapping driver for Logitech MX Master 3 mice
