@@ -18,14 +18,14 @@ sha256sums=('92026d3f5cc4797463cfecaaed490cecc421ac7d7fa6e861aaed4a8174e42b72')
 backup=('etc/mx3/config.conf')
 
 check() {
-    cd "${srcdir}/MX3-Linux-Driver-${pkgver}"
+    cd "${srcdir}/mx3-linux-driver-${pkgver}"
 
     make test
     make validate-packaging
 }
 
 package() {
-    cd "${srcdir}/MX3-Linux-Driver-${pkgver}"
+    cd "${srcdir}/mx3-linux-driver-${pkgver}"
 
     make PREFIX=/usr DESTDIR="${pkgdir}" install
 }
