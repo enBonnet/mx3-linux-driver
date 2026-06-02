@@ -88,6 +88,7 @@ format:
 # Debug build
 # ---------------------------------------------------------------------------
 debug: CFLAGS = -Wall -Wextra -g -O0 -DDEBUG -std=gnu11 -D_GNU_SOURCE -DMX3_VERSION=\"$(VERSION)\" -I$(INC_DIR) -fsanitize=address -fsanitize=undefined
+debug: LDFLAGS = -fsanitize=address -fsanitize=undefined
 debug: clean $(TARGET)
 
 # ---------------------------------------------------------------------------

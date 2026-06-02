@@ -114,6 +114,20 @@ void uinput_destroy(int fd) {
     LOG_INFO("Virtual keyboard device destroyed");
 }
 
+static int uinput_write_event(int fd, const struct input_event *ev, const char *context, int key) {
+    ssize_t written = write(fd, ev, sizeof(*ev));
+    if (written != (ssize_t)sizeof(*ev)) {
+        if (written < 0) {
+            LOG_ERROR("uinput write failed (%s key 0x%x): %s", context, key, strerror(errno));
+        } else {
+            LOG_ERROR("uinput write failed (%s key 0x%x): short write (%zd/%zu)", context, key, written, sizeof(*ev));
+        }
+        return -1;
+    }
+
+    return 0;
+}
+
 void uinput_send_keys(int fd, const int keys[], int key_count) {
     if (fd < 0 || !keys || key_count <= 0 || key_count > 8) return;
 
@@ -124,8 +138,7 @@ void uinput_send_keys(int fd, const int keys[], int key_count) {
         ev.type = EV_KEY;
         ev.code = keys[i];
         ev.value = 1;
-        if (write(fd, &ev, sizeof(ev)) < 0) {
-            LOG_ERROR("uinput write failed (press key 0x%x): %s", keys[i], strerror(errno));
+        if (uinput_write_event(fd, &ev, "press", keys[i]) < 0) {
             return;
         }
     }
@@ -133,7 +146,9 @@ void uinput_send_keys(int fd, const int keys[], int key_count) {
     ev.type = EV_SYN;
     ev.code = SYN_REPORT;
     ev.value = 0;
-    write(fd, &ev, sizeof(ev));
+    if (uinput_write_event(fd, &ev, "sync after press", 0) < 0) {
+        return;
+    }
 
     usleep(10000);
 
@@ -141,8 +156,7 @@ void uinput_send_keys(int fd, const int keys[], int key_count) {
         ev.type = EV_KEY;
         ev.code = keys[i];
         ev.value = 0;
-        if (write(fd, &ev, sizeof(ev)) < 0) {
-            LOG_ERROR("uinput write failed (release key 0x%x): %s", keys[i], strerror(errno));
+        if (uinput_write_event(fd, &ev, "release", keys[i]) < 0) {
             return;
         }
     }
@@ -150,7 +164,7 @@ void uinput_send_keys(int fd, const int keys[], int key_count) {
     ev.type = EV_SYN;
     ev.code = SYN_REPORT;
     ev.value = 0;
-    write(fd, &ev, sizeof(ev));
+    (void)uinput_write_event(fd, &ev, "sync after release", 0);
 }
 
 void uinput_register_keys(int fd, const int keys[], int key_count) {
