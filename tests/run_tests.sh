@@ -114,9 +114,9 @@ fi
 echo "--- Compilation warnings ---"
 if [ -f "$BINARY" ] && [ -x "$BINARY" ]; then
     OUTPUT=$(mktemp)
-    cd "$PROJECT_DIR" && make clean >/dev/null 2>&1
+    cd "$PROJECT_DIR" && MAKEFLAGS= make --no-print-directory clean >/dev/null 2>&1
     set +e
-    cd "$PROJECT_DIR" && make test-binaries > "$OUTPUT" 2>&1
+    cd "$PROJECT_DIR" && MAKEFLAGS= make --no-print-directory test-binaries > "$OUTPUT" 2>&1
     MAKE_STATUS=$?
     set -e
     if [ $MAKE_STATUS -eq 0 ]; then
