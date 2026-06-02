@@ -1,3 +1,12 @@
+mx3 (1.0.1-1) unstable; urgency=medium
+
+  * Fix uinput write return value handling
+  * Fix debug build linker flags for ASan/UBSan
+  * Fix Debian packaging for debhelper compat 13
+  * Fix test harness under dpkg-buildpackage
+
+ -- Ender Bonnet <enbonnet@gmail.com>  Tue, 02 Jun 2026 00:00:00 +0000
+
 mx3 (1.0.0-1) unstable; urgency=medium
 
   * Initial release.

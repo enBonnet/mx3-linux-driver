@@ -1,5 +1,5 @@
 Name:           mx3
-Version:        1.0.0
+Version:        1.0.1
 Release:        1%{?dist}
 Summary:        Gesture remapping driver for Logitech MX Master 3 mice
 
@@ -51,5 +51,11 @@ udevadm trigger 2>/dev/null || true
 %license %{_datadir}/licenses/%{name}/LICENSE
 
 %changelog
+* Tue Jun 02 2026 Ender Bonnet <enbonnet@gmail.com> - 1.0.1-1
+- Fix uinput write return value handling
+- Fix debug build linker flags for ASan/UBSan
+- Fix Debian packaging for debhelper compat 13
+- Fix test harness under dpkg-buildpackage
+
 * Mon Jun 01 2026 Ender Bonnet <enbonnet@gmail.com> - 1.0.0-1
 - Initial release
