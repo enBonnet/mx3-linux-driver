@@ -13,7 +13,7 @@ optdepends=('systemd: for automatic startup at boot')
 conflicts=('mx3-git')
 
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/enBonnet/mx3-linux-driver/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('TO_BE_FILLED_IN_FOR_RELEASE')
+sha256sums=('92026d3f5cc4797463cfecaaed490cecc421ac7d7fa6e861aaed4a8174e42b72')
 
 backup=('etc/mx3/config.conf')
 
