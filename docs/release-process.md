@@ -34,6 +34,7 @@ before tagging a release.
     - `dpkg-buildpackage -b -uc -us`
     - `rpmbuild -ba mx3.spec`
     - `makepkg`
+    - `copr-cli build enbonnet/mx3 ~/rpmbuild/SRPMS/mx3-*.src.rpm`
 11. Validate package install and service behavior on target distros.
 12. Tag and publish the release.
 
@@ -42,7 +43,7 @@ before tagging a release.
 Minimum validation set for each release:
 
 - Debian or Ubuntu
-- Fedora or RHEL-family
+- Fedora (via COPR)
 - Arch Linux
 
 For each distro family, verify:

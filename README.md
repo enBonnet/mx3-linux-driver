@@ -47,8 +47,8 @@ expected: the default install path is the root-managed `systemd` service.
 ```
 ├── Makefile             # Single build & install authority
 ├── PKGBUILD             # Arch Linux (paru -S mx3)
-├── mx3.spec             # CentOS/RHEL/Fedora (rpmbuild)
-├── debian/              # Debian/Ubuntu (apt install mx3)
+├── mx3.spec             # Fedora / CentOS / RHEL (COPR + rpmbuild)
+├── debian/              # Debian / Ubuntu (apt install mx3)
 │   ├── control          #   Package metadata
 │   ├── rules            #   dh wrapper that calls make install
 │   ├── changelog        #   Version history
@@ -106,7 +106,17 @@ The `PKGBUILD` calls `make PREFIX=/usr install`, relying on the Makefile to hand
 all file placement (binary, config, service, udev, docs). The `@PREFIX@` placeholder
 in the service file is substituted automatically.
 
-### CentOS / RHEL / Fedora
+### Fedora (COPR)
+
+```bash
+sudo dnf copr enable enbonnet/mx3
+sudo dnf install -y mx3
+sudo systemctl enable --now mx3
+```
+
+The [enbonnet/mx3 COPR](https://copr.fedorainfracloud.org/coprs/enbonnet/mx3/) builds the `mx3.spec` automatically for current Fedora releases.
+
+### CentOS / RHEL / Fedora (manual build)
 
 ```bash
 # Install build dependencies
@@ -119,7 +129,7 @@ rpmdev-setuptree
 rpmbuild -ba mx3.spec
 
 # Install
-sudo rpm -i ~/rpmbuild/RPMS/x86_64/mx3-1.0.0-1.*.rpm
+sudo rpm -i ~/rpmbuild/RPMS/x86_64/mx3-1.0.1-2.*.rpm
 ```
 
 The `mx3.spec` file calls `make PREFIX=/usr UDEV_DIR=%{_prefix}/lib/udev/rules.d install`,

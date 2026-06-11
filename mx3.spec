@@ -1,13 +1,15 @@
 Name:           mx3
 Version:        1.0.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Gesture remapping driver for Logitech MX Master 3 mice
+
+%global debug_package %{nil}
 
 License:        MIT
 URL:            https://github.com/enBonnet/mx3-linux-driver
 Source0:        %{name}-%{version}.tar.gz
 
-BuildRequires:  gcc, make, systemd-rpm-macros
+BuildRequires:  gcc make systemd-rpm-macros
 Requires:       coreutils, glibc
 Recommends:     systemd, udev
 
