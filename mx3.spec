@@ -1,5 +1,5 @@
 Name:           mx3
-Version:        1.0.1
+Version:        1.1.0
 Release:        2%{?dist}
 Summary:        Gesture remapping driver for Logitech MX Master 3 mice
 
@@ -53,6 +53,12 @@ udevadm trigger 2>/dev/null || true
 %license %{_datadir}/licenses/%{name}/LICENSE
 
 %changelog
+* Mon Jun 15 2026 Ender Bonnet <enbonnet@gmail.com> - 1.1.0-1
+- Add Bluetooth mouse support via name-based device matching
+- Broaden default device_name to "MX" for USB and Bluetooth MX-series mice
+- Reject unknown gesture direction names in config instead of silently overwriting tap
+- Expand native regression tests for scoring, gestures, and config parsing
+
 * Tue Jun 02 2026 Ender Bonnet <enbonnet@gmail.com> - 1.0.1-1
 - Fix uinput write return value handling
 - Fix debug build linker flags for ASan/UBSan

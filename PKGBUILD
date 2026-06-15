@@ -1,7 +1,7 @@
 # Maintainer: Ender Bonnet <enbonnet@gmail.com>
 
 pkgname=mx3
-pkgver=1.0.1
+pkgver=1.1.0
 pkgrel=2
 pkgdesc="Gesture remapping driver for Logitech MX Master 3 mice on Linux"
 arch=('x86_64')
@@ -13,7 +13,7 @@ optdepends=('systemd: for automatic startup at boot')
 conflicts=('mx3-git')
 
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/enBonnet/mx3-linux-driver/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('92026d3f5cc4797463cfecaaed490cecc421ac7d7fa6e861aaed4a8174e42b72')
+sha256sums=('SKIP')
 
 backup=('etc/mx3/config.conf')
 

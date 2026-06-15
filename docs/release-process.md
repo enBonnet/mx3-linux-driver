@@ -44,6 +44,7 @@ Minimum validation set for each release:
 
 - Debian or Ubuntu
 - Fedora (via COPR)
+- openSUSE (via OBS)
 - Arch Linux
 
 For each distro family, verify:

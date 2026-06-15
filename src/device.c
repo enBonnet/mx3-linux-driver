@@ -11,38 +11,6 @@
 
 #define MAX_PATH 512
 
-static int check_device_usb(int fd, int vid, int pid) {
-    if (vid == 0 && pid == 0) return 1;  /* match any */
-
-    struct input_id id;
-    if (ioctl(fd, EVIOCGID, &id) < 0) {
-        LOG_DEBUG("Cannot get device ID — skipping VID/PID check");
-        return 0;
-    }
-
-    if ((vid == 0 || id.vendor == vid) && (pid == 0 || id.product == pid)) {
-        LOG_DEBUG("Device matches VID:PID %04x:%04x", id.vendor, id.product);
-        return 1;
-    }
-    return 0;
-}
-
-static int check_device_name(int fd, const char *substr) {
-    if (!substr || !*substr) return 1;  /* match any */
-
-    char name[256] = {0};
-    if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name) < 0) {
-        LOG_DEBUG("Cannot get device name");
-        return 0;
-    }
-
-    if (strcasestr(name, substr)) {
-        LOG_DEBUG("Device name '%s' matches '%s'", name, substr);
-        return 1;
-    }
-    return 0;
-}
-
 static int check_device_caps(int fd) {
     unsigned long evbit = 0;
     if (ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), &evbit) < 0) return 0;
@@ -114,31 +82,27 @@ int device_find_mouse(const device_match_t *match) {
             continue;
         }
 
-        int score = 0;
-        if (check_device_usb(fd, match->vid, match->pid) && check_device_name(fd, match->name)) {
-            char name[256] = {0};
-            struct input_id id = {0};
+        /* Bluetooth and HID-proxy mice may report a generic or zero VID/PID,
+         * so always score by name even when the VID/PID do not match. */
+        char name[256] = {0};
+        struct input_id id = {0};
+        int has_name = ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name) >= 0;
+        int has_id = ioctl(fd, EVIOCGID, &id) >= 0;
 
-            if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name) >= 0 &&
-                ioctl(fd, EVIOCGID, &id) >= 0) {
-                score = device_score_match(match, id.vendor, id.product, name);
-            }
-        } else {
-            if (check_device_usb(fd, match->vid, match->pid)) score += 100;
-            if (check_device_name(fd, match->name)) score += 50;
+        int score = device_score_match(match, has_id ? id.vendor : 0,
+                                        has_id ? id.product : 0,
+                                        has_name ? name : NULL);
+
+        if (score > 0) {
+            LOG_INFO("  Candidate: %s (VID:%04x PID:%04x name:'%s') score=%d",
+                     path, id.vendor, id.product, name, score);
         }
 
         if (score > best_score) {
             if (best_fd >= 0) close(best_fd);
             best_fd = fd;
             best_score = score;
-
-            char name[256] = {0};
-            ioctl(best_fd, EVIOCGNAME(sizeof(name) - 1), name);
-            struct input_id id;
-            ioctl(best_fd, EVIOCGID, &id);
-            LOG_INFO("  Best match so far: %s (VID:%04x PID:%04x name:'%s') score=%d",
-                     path, id.vendor, id.product, name, score);
+            LOG_INFO("  Best match so far: %s score=%d", path, score);
         } else {
             close(fd);
         }

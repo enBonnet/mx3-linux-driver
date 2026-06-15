@@ -4,7 +4,7 @@ Gesture remapping driver for Logitech MX Master 3 (and MX2/MX2S/Anywhere 3) mice
 
 ## Overview
 
-- Detects the MX3 mouse via USB VID/PID and/or device name
+- Detects the MX3 mouse via USB VID/PID and/or device name (Bluetooth included)
 - Tracks mouse movement while a button is held
 - Classifies gestures: tap, swipe (4 cardinal), diagonal (4 corners)
 - Injects keyboard shortcuts via a virtual `/dev/uinput` device
@@ -47,13 +47,15 @@ expected: the default install path is the root-managed `systemd` service.
 ```
 ├── Makefile             # Single build & install authority
 ├── PKGBUILD             # Arch Linux (paru -S mx3)
-├── mx3.spec             # Fedora / CentOS / RHEL (COPR + rpmbuild)
+├── mx3.spec             # Fedora / CentOS / RHEL / openSUSE (COPR, rpmbuild, OBS)
 ├── debian/              # Debian / Ubuntu (apt install mx3)
 │   ├── control          #   Package metadata
 │   ├── rules            #   dh wrapper that calls make install
 │   ├── changelog        #   Version history
 │   ├── mx3.postinst     #   Post-install (enable service, reload udev)
 │   └── mx3.postrm       #   Post-remove (disable service)
+├── obs/                 # openSUSE Build Service (OBS) integration
+│   └── _service          #   Auto-sync sources from GitHub
 ├── deploy/
 │   ├── mx3.service      #   systemd unit (runs mx3 in foreground)
 │   └── 99-mx3.rules     #   udev rule for the packaged service runtime
@@ -85,7 +87,7 @@ sudo apt install build-essential debhelper
 dpkg-buildpackage -b -uc -us
 
 # Install
-sudo apt install ../mx3_1.0.0-1_amd64.deb
+sudo apt install ../mx3_1.1.0-1_amd64.deb
 ```
 
 The `debian/` directory provides the package metadata. `dpkg-buildpackage` invokes
@@ -105,6 +107,20 @@ makepkg -si
 The `PKGBUILD` calls `make PREFIX=/usr install`, relying on the Makefile to handle
 all file placement (binary, config, service, udev, docs). The `@PREFIX@` placeholder
 in the service file is substituted automatically.
+
+### openSUSE (OBS)
+
+```bash
+# Add home project repository (replace openSUSE_Leap_15.6 with your version)
+sudo zypper addrepo https://download.opensuse.org/repositories/home:/enbonnet/openSUSE_Leap_15.6/home:enbonnet.repo
+sudo zypper refresh
+sudo zypper install -y mx3
+sudo systemctl enable --now mx3
+```
+
+Or via **YaST** / **Software Management** search for `mx3`.
+
+The package is built from the same `mx3.spec` on the [openSUSE Build Service (OBS)](https://build.opensuse.org/).
 
 ### Fedora (COPR)
 
@@ -129,7 +145,7 @@ rpmdev-setuptree
 rpmbuild -ba mx3.spec
 
 # Install
-sudo rpm -i ~/rpmbuild/RPMS/x86_64/mx3-1.0.1-2.*.rpm
+sudo rpm -i ~/rpmbuild/RPMS/x86_64/mx3-1.1.0-1.*.rpm
 ```
 
 The `mx3.spec` file calls `make PREFIX=/usr UDEV_DIR=%{_prefix}/lib/udev/rules.d install`,
@@ -155,7 +171,8 @@ service instead of requiring broad interactive-user access.
 | MX Master 3S | `0x046d:0x408a` | Bolt receiver |
 | MX Master 2S | `0x046d:0x4085` | |
 | MX Anywhere 3 | `0x046d:0x4091` | Compact version |
-| Generic Logitech | Any `0x046d` device | Falls back to name matching |
+| Generic Logitech | Any `0x046d` device | Set `device_name = Logitech` if it is not an MX model |
+| Bluetooth pairing | varies / generic | Matched by device name (`MX`) |
 
 ## Mapped Buttons
 
@@ -247,7 +264,7 @@ log_level = info           # debug | info | warn | error
 [device]
 vid = 0x046d               # USB vendor ID (0 = any)
 pid = 0                    # USB product ID (0 = any)
-device_name = Logitech     # Substring to match device name
+device_name = MX           # Substring to match device name (also matches Bluetooth)
 
 [button.forward]
 event_code = 0x115
@@ -425,6 +442,7 @@ Release and versioning are documented in `docs/release-process.md`.
 | Wrong device selected | Use `-d /dev/input/eventN` to force a device |
 | Keys not working | Verify key names in config are valid |
 | "Permission denied" | Use the packaged `systemd` service, or run with device access for debugging |
+| Bluetooth mouse not detected | Bluetooth devices often report a generic VID/PID; ensure `device_name` matches the evdev name shown by `cat /proc/bus/input/devices` |
 
 ## License
 

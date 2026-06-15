@@ -1,0 +1,16 @@
+<services>
+  <service name="tar_scm" mode="disabled">
+    <param name="scm">git</param>
+    <param name="url">https://github.com/enBonnet/mx3-linux-driver.git</param>
+    <param name="filename">mx3</param>
+    <param name="versionformat">1.1.0</param>
+    <param name="revision">main</param>
+  </service>
+  <service name="recompress" mode="disabled">
+    <param name="compression">gz</param>
+    <param name="file">*.tar</param>
+  </service>
+  <service name="set_version" mode="disabled">
+    <param name="basename">mx3</param>
+  </service>
+</services>

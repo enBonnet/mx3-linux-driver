@@ -252,6 +252,13 @@ int config_load(config_t *cfg, const char *path) {
 
                 gesture_dir_t dir = parse_direction(dir_name);
 
+                /* unknown direction names (other than tap) should not silently
+                 * overwrite the tap slot */
+                if (dir == DIR_NONE && strcasecmp(dir_name, "tap") != 0) {
+                    LOG_WARN("Unknown gesture direction '%s' in config", dir_name);
+                    continue;
+                }
+
                 /* find or create action for this direction */
                 int idx = -1;
                 for (int i = 0; i < cur_button->action_count; i++) {
@@ -307,7 +314,7 @@ void config_set_defaults(config_t *cfg) {
     /* device match defaults for Logitech MX3 */
     cfg->device_match.vid = VID_LOGITECH;
     cfg->device_match.pid = 0;  /* match any Logitech product */
-    strcpy(cfg->device_match.name, "Logitech");
+    strcpy(cfg->device_match.name, "MX");  /* matches USB and Bluetooth MX-series names */
 
     /* button definitions */
     static const struct {
