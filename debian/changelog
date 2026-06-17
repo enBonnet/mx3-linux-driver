@@ -1,11 +1,11 @@
-mx3 (1.1.0-1) unstable; urgency=medium
+mx3 (1.1.0-1) noble; urgency=medium
 
   * Add Bluetooth mouse support via name-based device matching
   * Broaden default device_name to "MX" for USB and Bluetooth MX-series mice
   * Reject unknown gesture direction names in config instead of overwriting tap
   * Expand native regression tests for scoring, gestures, and config parsing
 
- -- Ender Bonnet <enbonnet@gmail.com>  Mon, 15 Jun 2026 00:00:00 +0000
+ -- Ender Bonnet <ender@enbonnet.com>  Mon, 15 Jun 2026 00:00:00 +0000
 
 mx3 (1.0.1-1) unstable; urgency=medium
 
@@ -14,10 +14,10 @@ mx3 (1.0.1-1) unstable; urgency=medium
   * Fix Debian packaging for debhelper compat 13
   * Fix test harness under dpkg-buildpackage
 
- -- Ender Bonnet <enbonnet@gmail.com>  Tue, 02 Jun 2026 00:00:00 +0000
+ -- Ender Bonnet <ender@enbonnet.com>  Tue, 02 Jun 2026 00:00:00 +0000
 
 mx3 (1.0.0-1) unstable; urgency=medium
 
   * Initial release.
 
- -- Ender Bonnet <enbonnet@gmail.com>  Mon, 01 Jun 2026 00:00:00 +0000
+ -- Ender Bonnet <ender@enbonnet.com>  Mon, 01 Jun 2026 00:00:00 +0000

@@ -1,0 +1,21 @@
+services:
+  ppa:
+    build: ./ppa
+    volumes:
+      - ..:/src:Z
+    profiles: ["ppa"]
+
+  aur:
+    build: ./aur
+    volumes:
+      - ../PKGBUILD:/src/PKGBUILD:Z
+      - ../.SRCINFO:/src/.SRCINFO:Z
+    profiles: ["aur"]
+
+  copr:
+    build: ./copr
+    profiles: ["copr"]
+
+  obs:
+    build: ./obs
+    profiles: ["obs"]

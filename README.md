@@ -75,6 +75,15 @@ the `ExecStart` path matches the chosen prefix (`/usr/bin/mx3` on AUR/RPM/deb,
 `/usr/local/bin/mx3` on manual installs). The service runs `mx3` in the foreground
 and lets `systemd` manage restart and lifecycle.
 
+## Package Repositories
+
+| Platform | URL |
+|----------|-----|
+| openSUSE (OBS) | https://build.opensuse.org/package/show/home:enbonnet/mx3 |
+| Ubuntu (PPA) | https://launchpad.net/~enbonnet/+archive/ubuntu/mx3 |
+| Fedora (COPR) | https://copr.fedorainfracloud.org/coprs/enbonnet/mx3/ |
+| Arch (AUR) | https://aur.archlinux.org/packages/mx3 |
+
 ## Installation
 
 ### Debian / Ubuntu
